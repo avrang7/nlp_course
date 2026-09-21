@@ -1,0 +1,1640 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "lv0lWVrTZbHz"
+      },
+      "source": [
+        "## Practice: Fun with Word Embeddings (4 points total)\n",
+        "\n",
+        "Today we gonna play with word embeddings: train our own little embeddings, load one from the gensim model zoo and use it to visualize text corpora.\n",
+        "\n",
+        "This whole thing is gonna happen on top of an embedding dataset.\n",
+        "\n",
+        "__Requirements:__  `pip install --upgrade nltk gensim bokeh`, but only if you're running locally.\n",
+        "\n",
+        "**Please submit this notebook as part of your homework!**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "2MTyAyRUZbH0"
+      },
+      "outputs": [],
+      "source": [
+        "# download the data:\n",
+        "!wget \"https://www.dropbox.com/s/obaitrix9jyu84r/quora.txt?dl=1\" -O ./quora.txt\n",
+        "# alternative download link: https://yadi.sk/i/BPQrUu1NaTduEw"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "PZ4M9GNBZbH0"
+      },
+      "outputs": [],
+      "source": [
+        "import numpy as np\n",
+        "\n",
+        "with open(\"./quora.txt\", encoding=\"utf-8\") as file:\n",
+        "    data = list(file)\n",
+        "\n",
+        "data[50]"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "yzXtVeVWZbH0"
+      },
+      "source": [
+        "__Tokenization:__ a typical first step for an NLP task is to split raw data into words.\n",
+        "The text we're working with is in raw format: with all the punctuation and emojis attached to some words, so a simple str.split won't do.\n",
+        "\n",
+        "Let's use __`nltk`__ - a library that handles many NLP tasks like tokenization, stemming, or part-of-speech tagging."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "AHFycUL7ZbH1"
+      },
+      "outputs": [],
+      "source": [
+        "from nltk.tokenize import WordPunctTokenizer\n",
+        "tokenizer = WordPunctTokenizer()\n",
+        "\n",
+        "print(tokenizer.tokenize(data[50]))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 14,
+      "metadata": {
+        "id": "_PU6YZtpZbH1"
+      },
+      "outputs": [],
+      "source": [
+        "# TASK: lowercase everything and extract tokens with tokenizer.\n",
+        "# data_tok should be a list of lists of tokens for each line in data.\n",
+        "\n",
+        "data_tok = [tokenizer.tokenize(line.lower()) for line in data]"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "qFYXZDh9ZbH1"
+      },
+      "outputs": [],
+      "source": [
+        "assert all(isinstance(row, (list, tuple)) for row in data_tok), \"please convert each line into a list of tokens (strings)\"\n",
+        "assert all(all(isinstance(tok, str) for tok in row) for row in data_tok), \"please convert each line into a list of tokens (strings)\"\n",
+        "is_latin = lambda tok: all('a' <= x.lower() <= 'z' for x in tok)\n",
+        "assert all(map(lambda l: not is_latin(l) or l.islower(), map(' '.join, data_tok))), \"please make sure to lowercase the data\""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "a2wYIvbWZbH1"
+      },
+      "outputs": [],
+      "source": [
+        "print([' '.join(row) for row in data_tok[:2]])"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "2wPA84X-ZbH1"
+      },
+      "source": [
+        "__Word vectors:__ as the saying goes, there's more than one way to train word embeddings. There's Word2Vec and GloVe with different objective functions. Then there's fastText that uses character-level models to train word embeddings.\n",
+        "\n",
+        "The choice is huge, so let's start someplace small: __gensim__ is another NLP library that features many vector-based models including word2vec."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "ds4SDDovZbH1"
+      },
+      "outputs": [],
+      "source": [
+        "from gensim.models import Word2Vec\n",
+        "model = Word2Vec(data_tok,\n",
+        "                 vector_size=32,      # embedding vector size\n",
+        "                 min_count=5,         # consider words that occurred at least 5 times\n",
+        "                 window=5).wv         # define context as a 5-word window around the target word\n",
+        "\n",
+        "# From gensim docs\n",
+        "# wv: This object essentially contains the mapping between words and embeddings.\n",
+        "# After training, it can be used directly to query those embeddings in various ways."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "mGLWtiWLZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "# now you can get word vectors !\n",
+        "model.get_vector('anything')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "aeP-BRZJZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "# or query similar words directly. Go play with it!\n",
+        "model.most_similar('bread')"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "LSILflOBZbH2"
+      },
+      "source": [
+        "### Using pre-trained model\n",
+        "\n",
+        "Took it a while, huh? Now imagine training life-sized (100~300D) word embeddings on gigabytes of text: Wikipedia articles or Twitter posts.\n",
+        "\n",
+        "Thankfully, nowadays you can get a pre-trained word embedding model in 2 lines of code (no SMS required, promise).\n",
+        "\n",
+        "After being downloaded for the first time (or if you manually delete it), the model is saved in the `~/gensim_data` or `%USER_PATH%/gensim_data` directory. This can be checked by setting the return_path parameter to True."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "SGbhrh4CZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "import gensim.downloader as api\n",
+        "model = api.load('glove-twitter-100')"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "XVlYREdBZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "model.most_similar(positive=[\"coder\", \"money\"], negative=[\"brain\"])"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "pf00LWZ0ZbH2"
+      },
+      "source": [
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "\n",
+        "# Visualizing data with word embeddings (1 point)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "LF7AyhiBZbH2"
+      },
+      "source": [
+        "One way to see if our vectors are any good is to plot them. Thing is, those vectors are in 30D+ space and we humans are more used to 2-3D.\n",
+        "\n",
+        "Luckily, we machine learners know about __dimensionality reduction__ methods.\n",
+        "\n",
+        "Let's use that to plot 1000 most frequent words"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "TZSs5TSkZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "words = model.index_to_key[:1000]\n",
+        "\n",
+        "print(words[::100])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 27,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "XyUF-kkWZbH2",
+        "outputId": "9b5bba45-ff48-474b-f877-9b729d4c1254"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "[==================================================] 100.0% 128.1/128.1MB downloaded\n",
+            "['the', ',', '.', 'of', 'to', 'and', 'in', 'a', '\"', \"'s\", 'for', '-', 'that', 'on', 'is', 'was', 'said', 'with', 'he', 'as', 'it', 'by', 'at', '(', ')', 'from', 'his', \"''\", '``', 'an', 'be', 'has', 'are', 'have', 'but', 'were', 'not', 'this', 'who', 'they', 'had', 'i', 'which', 'will', 'their', ':', 'or', 'its', 'one', 'after', 'new', 'been', 'also', 'we', 'would', 'two', 'more', \"'\", 'first', 'about', 'up', 'when', 'year', 'there', 'all', '--', 'out', 'she', 'other', 'people', \"n't\", 'her', 'percent', 'than', 'over', 'into', 'last', 'some', 'government', 'time', '$', 'you', 'years', 'if', 'no', 'world', 'can', 'three', 'do', ';', 'president', 'only', 'state', 'million', 'could', 'us', 'most', '_', 'against', 'u.s.']\n",
+            "['the', ',', '.', 'of', 'to', 'and', 'in', 'a', '\"', \"'s\", 'for', '-', 'that', 'on', 'is', 'was', 'said', 'with', 'he', 'as', 'it', 'by', 'at', '(', ')', 'from', 'his', \"''\", '``', 'an', 'be', 'has', 'are', 'have', 'but', 'were', 'not', 'this', 'who', 'they', 'had', 'i', 'which', 'will', 'their', ':', 'or', 'its', 'one', 'after', 'new', 'been', 'also', 'we', 'would', 'two', 'more', \"'\", 'first', 'about', 'up', 'when', 'year', 'there', 'all', '--', 'out', 'she', 'other', 'people', \"n't\", 'her', 'percent', 'than', 'over', 'into', 'last', 'some', 'government', 'time', '$', 'you', 'years', 'if', 'no', 'world', 'can', 'three', 'do', ';', 'president', 'only', 'state', 'million', 'could', 'us', 'most', '_', 'against', 'u.s.']\n",
+            "Количество слов: 1000\n",
+            "Размер массива: (1000, 100)\n"
+          ]
+        }
+      ],
+      "source": [
+        "# for each word, compute its vector with mode\n",
+        "import numpy as np\n",
+        "import gensim.downloader as api\n",
+        "\n",
+        "# Загружаем готовую модель слов\n",
+        "model = api.load(\"glove-wiki-gigaword-100\")\n",
+        "\n",
+        "# Берём первые 1000 слов\n",
+        "words = model.index_to_key[:1000]\n",
+        "\n",
+        "# Показываем первые 100 слов\n",
+        "print(words[:100])\n",
+        "\n",
+        "# Получаем вектор для каждого слова\n",
+        "words = model.index_to_key[:1000]\n",
+        "\n",
+        "print(words[:100])\n",
+        "\n",
+        "word_vectors = np.array(\n",
+        "    [model.get_vector(word) for word in words],\n",
+        "    dtype=np.float32\n",
+        ")\n",
+        "\n",
+        "print(\"Количество слов:\", len(words))\n",
+        "print(\"Размер массива:\", word_vectors.shape)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install gensim"
+      ],
+      "metadata": {
+        "id": "suFyfp_Zb_NK",
+        "outputId": "d11e043b-c978-4545-fd74-6b0b8fe852b9",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": 26,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Collecting gensim\n",
+            "  Downloading gensim-4.4.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (8.4 kB)\n",
+            "Requirement already satisfied: numpy>=1.18.5 in /usr/local/lib/python3.13/dist-packages (from gensim) (2.1.3)\n",
+            "Requirement already satisfied: scipy>=1.7.0 in /usr/local/lib/python3.13/dist-packages (from gensim) (1.16.3)\n",
+            "Requirement already satisfied: smart_open>=1.8.1 in /usr/local/lib/python3.13/dist-packages (from gensim) (8.0.1)\n",
+            "Requirement already satisfied: wrapt in /usr/local/lib/python3.13/dist-packages (from smart_open>=1.8.1->gensim) (2.4.0)\n",
+            "Downloading gensim-4.4.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (27.8 MB)\n",
+            "\u001b[2K   \u001b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m \u001b[32m27.8/27.8 MB\u001b[0m \u001b[31m22.2 MB/s\u001b[0m eta \u001b[36m0:00:00\u001b[0m\n",
+            "\u001b[?25hInstalling collected packages: gensim\n",
+            "Successfully installed gensim-4.4.0\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "33LrppyyZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "assert isinstance(word_vectors, np.ndarray)\n",
+        "assert word_vectors.shape == (len(words), 100)\n",
+        "assert np.isfinite(word_vectors).all()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "B8qTtDDwZbH2"
+      },
+      "source": [
+        "#### Linear projection: PCA\n",
+        "\n",
+        "The simplest linear dimensionality reduction method is **P**rincipal **C**omponent **A**nalysis.\n",
+        "\n",
+        "In geometric terms, PCA tries to find axes along which most of the variance occurs. The \"natural\" axes, if you wish.\n",
+        "\n",
+        "<img src=\"https://github.com/yandexdataschool/Practical_RL/raw/master/yet_another_week/_resource/pca_fish.png\" style=\"width:30%\">\n",
+        "\n",
+        "\n",
+        "Under the hood, it attempts to decompose object-feature matrix $X$ into two smaller matrices: $W$ and $\\hat W$ minimizing _mean squared error_:\n",
+        "\n",
+        "$$\\|(X W) \\hat{W} - X\\|^2_2 \\to_{W, \\hat{W}} \\min$$\n",
+        "- $X \\in \\mathbb{R}^{n \\times m}$ - object matrix (**centered**);\n",
+        "- $W \\in \\mathbb{R}^{m \\times d}$ - matrix of direct transformation;\n",
+        "- $\\hat{W} \\in \\mathbb{R}^{d \\times m}$ - matrix of reverse transformation;\n",
+        "- $n$ samples, $m$ original dimensions and $d$ target dimensions;\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 28,
+      "metadata": {
+        "id": "zmOKRQrBZbH2"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.decomposition import PCA\n",
+        "\n",
+        "# map word vectors onto 2d plane with PCA. Use good old sklearn API (fit, transform)\n",
+        "# after that, normalize vectors to make sure they have zero mean and unit variance\n",
+        "from sklearn.decomposition import PCA\n",
+        "\n",
+        "# map word vectors onto 2d plane with PCA. Use good old sklearn API (fit, transform)\n",
+        "# after that, normalize vectors to make sure they have zero mean and unit variance\n",
+        "pca = PCA(n_components=2, random_state=42)\n",
+        "word_vectors_pca = pca.fit_transform(word_vectors)\n",
+        "\n",
+        "word_vectors_pca = (word_vectors_pca - word_vectors_pca.mean(axis=0))\n",
+        "word_vectors_pca = word_vectors_pca / word_vectors_pca.std(axis=0)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "P5hE66gtZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "assert word_vectors_pca.shape == (len(word_vectors), 2), \"there must be a 2d vector for each word\"\n",
+        "assert max(abs(word_vectors_pca.mean(0))) < 1e-5, \"points must be zero-centered\"\n",
+        "assert max(abs(1.0 - word_vectors_pca.std(0))) < 1e-2, \"points must have unit variance\""
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "5HsUynDbZbH3"
+      },
+      "source": [
+        "#### Let's draw it!\n",
+        "\n",
+        "> **Rendering note.** These plots are exploratory. Interactive Bokeh output depends on the notebook frontend and may occasionally fail to appear even when the coordinates and figure are valid. If the numeric assertions pass and `draw_vectors` returns a Bokeh figure, a missing inline canvas is not considered an error. You may use a static Matplotlib scatter plot or save the Bokeh figure to HTML as a fallback."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "9fD82jhWZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "import bokeh.models as bm, bokeh.plotting as pl\n",
+        "from bokeh.io import output_notebook\n",
+        "output_notebook()\n",
+        "\n",
+        "def draw_vectors(x, y, radius=10, alpha=0.25, color='blue',\n",
+        "                 width=600, height=400, show=True, **kwargs):\n",
+        "    \"\"\" draws an interactive plot for data points with auxilirary info on hover \"\"\"\n",
+        "    if isinstance(color, str): color = [color] * len(x)\n",
+        "    data_source = bm.ColumnDataSource({ 'x' : x, 'y' : y, 'color': color, **kwargs })\n",
+        "\n",
+        "    fig = pl.figure(active_scroll='wheel_zoom', width=width, height=height)\n",
+        "    fig.scatter('x', 'y', size=radius, color='color', alpha=alpha, source=data_source)\n",
+        "\n",
+        "    fig.add_tools(bm.HoverTool(tooltips=[(key, \"@\" + key) for key in kwargs.keys()]))\n",
+        "    if show:\n",
+        "        try:\n",
+        "            pl.show(fig)\n",
+        "        except Exception as error:\n",
+        "            print(f\"Bokeh figure was created but could not be rendered inline: {error}\")\n",
+        "    return fig"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "JJMWmvM5ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "draw_vectors(word_vectors_pca[:, 0], word_vectors_pca[:, 1], token=words)\n",
+        "\n",
+        "# hover a mouse over there and see if you can identify the clusters"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "CYCIMHonZbH3"
+      },
+      "source": [
+        "#### Visualizing neighbors with t-SNE\n",
+        "PCA is nice but it's strictly linear and thus only able to capture coarse high-level structure of the data.\n",
+        "\n",
+        "If we instead want to focus on keeping neighboring points near, we could use TSNE, which is itself an embedding method. Here you can read __[more on TSNE](https://distill.pub/2016/misread-tsne/)__."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 29,
+      "metadata": {
+        "id": "aZSwQ2e_ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.manifold import TSNE\n",
+        "\n",
+        "# map word vectors onto 2d plane with TSNE. hint: don't panic, it may take a minute or two to fit.\n",
+        "# normalize them as just like with PCA\n",
+        "\n",
+        "tsne = TSNE(n_components=2, random_state=42, perplexity=30, init=\"pca\", learning_rate=\"auto\")\n",
+        "word_tsne = tsne.fit_transform(word_vectors)\n",
+        "\n",
+        "word_tsne = (word_tsne - word_tsne.mean(axis=0))\n",
+        "word_tsne = word_tsne / word_tsne.std(axis=0)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "kD9XW5v9ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "assert isinstance(word_tsne, np.ndarray)\n",
+        "assert word_tsne.shape == (len(words), 2), \"there must be a 2d vector for each word\"\n",
+        "assert np.isfinite(word_tsne).all(), \"t-SNE coordinates must be finite\"\n",
+        "\n",
+        "draw_vectors(word_tsne[:, 0], word_tsne[:, 1], color='green', token=words)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "fhqLBgvxZbH3"
+      },
+      "source": [
+        "### Visualizing phrases\n",
+        "\n",
+        "Word embeddings can also be used to represent short phrases. The simplest way is to take __an average__ of vectors for all tokens in the phrase with some weights.\n",
+        "\n",
+        "This trick is useful to identify what data are you working with: find if there are any outliers, clusters or other artifacts.\n",
+        "\n",
+        "Let's try this new hammer on our data!\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 30,
+      "metadata": {
+        "id": "gzzg_6q3ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "def get_phrase_embedding(phrase):\n",
+        "    \"\"\"\n",
+        "    Convert phrase to a vector by aggregating it's word embeddings. See description above.\n",
+        "    \"\"\"\n",
+        "    # 1. lowercase phrase\n",
+        "    # 2. tokenize phrase\n",
+        "    # 3. average word vectors for all words in tokenized phrase\n",
+        "    # skip words that are not in model's vocabulary\n",
+        "    # if all words are missing from vocabulary, return zeros\n",
+        "\n",
+        "    vector = np.zeros([model.vector_size], dtype='float32')\n",
+        "\n",
+        "    tokens = WordPunctTokenizer().tokenize(phrase.lower())\n",
+        "    vectors = [model[token] for token in tokens if token in model.key_to_index]\n",
+        "\n",
+        "    if vectors:\n",
+        "        return np.mean(vectors, axis=0).astype(np.float32)\n",
+        "\n",
+        "    return vector\n",
+        "\n",
+        ""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "yizsChLgZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "vector = get_phrase_embedding(\"I'm very sure. This never happened to me before...\")\n",
+        "\n",
+        "assert np.allclose(vector[::10],\n",
+        "                   np.array([ 0.31807372, -0.02558171,  0.0933293 , -0.1002182 , -1.0278689 ,\n",
+        "                             -0.16621883,  0.05083408,  0.17989802,  1.3701859 ,  0.08655966],\n",
+        "                              dtype=np.float32))\n",
+        "assert np.array_equal(get_phrase_embedding(\"thisisgibberish\"), np.zeros([model.vector_size], dtype='float32')), \"corner case for all missing words should be handled as described in the function comments\""
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 31,
+      "metadata": {
+        "id": "pWn_kANnZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "# let's only consider ~5k phrases for a first run.\n",
+        "chosen_phrases = data[::len(data) // 1000]\n",
+        "\n",
+        "# compute vectors for chosen phrases\n",
+        "phrase_vectors = np.stack([get_phrase_embedding(phrase) for phrase in chosen_phrases], axis=0)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "mtbFhX30ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "assert isinstance(phrase_vectors, np.ndarray) and np.isfinite(phrase_vectors).all()\n",
+        "assert phrase_vectors.shape == (len(chosen_phrases), model.vector_size)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "Rcrzlwb7ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "# map vectors into 2d space with pca, tsne or your other method of choice\n",
+        "# don't forget to normalize\n",
+        "\n",
+        "phrase_vectors_2d = TSNE().fit_transform(phrase_vectors)\n",
+        "\n",
+        "phrase_vectors_2d = (phrase_vectors_2d - phrase_vectors_2d.mean(axis=0)) / phrase_vectors_2d.std(axis=0)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "16kOEFqtZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "draw_vectors(phrase_vectors_2d[:, 0], phrase_vectors_2d[:, 1],\n",
+        "             phrase=[phrase[:50] for phrase in chosen_phrases],\n",
+        "             radius=20,)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "1RdT7f5cZbH3"
+      },
+      "source": [
+        "**There's more below! Scroll down when you're ready.**\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "\n",
+        "### Text Classification: Prohibited Comment Classification\n",
+        "\n",
+        "![img](https://github.com/yandexdataschool/nlp_course/raw/master/resources/banhammer.jpg)\n",
+        "\n",
+        "__In this notebook__ you will build an algorithm that classifies social media comments into normal or toxic.\n",
+        "Like in many real-world cases, you only have a small (10^3) dataset of hand-labeled examples to work with. We'll tackle this problem using both classical nlp methods and embedding-based approach."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "Ck_D0_0vZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "# if you're in colab, download the data:\n",
+        "# !wget https://raw.githubusercontent.com/yandexdataschool/nlp_course/refs/heads/2025/week01_embeddings/comments.tsv -O ./comments.tsv -q"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "xE8GdPV7ZbH3"
+      },
+      "outputs": [],
+      "source": [
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import matplotlib.pyplot as plt\n",
+        "%matplotlib inline\n",
+        "data = pd.read_csv(\"comments.tsv\", sep='\\t')\n",
+        "\n",
+        "texts = data['comment_text'].values\n",
+        "target = data['should_ban'].values\n",
+        "data[50::200]"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "W10h5Hr5ZbH4"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "texts_train, texts_test, y_train, y_test = train_test_split(texts, target, test_size=0.5, random_state=42)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ox-s-yXdZbH4"
+      },
+      "source": [
+        "__Note:__ it is generally a good idea to split data into train/test before anything is done to them.\n",
+        "\n",
+        "It guards you against possible data leakage in the preprocessing stage. For example, should you decide to select words present in obscene tweets as features, you should only count those words over the training set. Otherwise your algoritm can cheat evaluation."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "XI4sYSV3ZbH4"
+      },
+      "source": [
+        "### Preprocessing and tokenization\n",
+        "\n",
+        "Comments contain raw text with punctuation, upper/lowercase letters and even newline symbols.\n",
+        "\n",
+        "To simplify all further steps, we'll split text into space-separated tokens using one of nltk tokenizers.\n",
+        "\n",
+        "The tokenizer must run exactly once. After preprocessing, `texts_train` and `texts_test` are the canonical whitespace-tokenized strings used by the rest of this notebook. In all subsequent BoW and TF-IDF tasks, obtain tokens with `text.split()`; do not apply `TweetTokenizer`, `WordPunctTokenizer` or another tokenizer a second time."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "qaSe7sG8ZbH4"
+      },
+      "outputs": [],
+      "source": [
+        "from nltk.tokenize import TweetTokenizer\n",
+        "tokenizer = TweetTokenizer()\n",
+        "preprocess = lambda text: ' '.join(tokenizer.tokenize(text.lower()))\n",
+        "\n",
+        "text = 'How to be a grown-up at work: replace \"fuck you\" with \"Ok, great!\".'\n",
+        "print(\"before:\", text,)\n",
+        "print(\"after:\", preprocess(text),)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 47,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 426
+        },
+        "id": "lZdlOGtpZbH4",
+        "outputId": "edd2b6bf-0694-406a-fdcd-bb4e040afa56"
+      },
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "FileNotFoundError",
+          "evalue": "[Errno 2] No such file or directory: 'train.csv'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/4084616206.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;32mimport\u001b[0m \u001b[0mpandas\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 3\u001b[0;31m \u001b[0mtrain\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"train.csv\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      4\u001b[0m \u001b[0mtest\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"test.csv\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, date_format, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, encoding_errors, dialect, on_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options, dtype_backend)\u001b[0m\n\u001b[1;32m   1024\u001b[0m     \u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkwds_defaults\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1025\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1026\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1027\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1028\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    619\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 620\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    622\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mchunksize\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0miterator\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m   1618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1619\u001b[0m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mIOHandles\u001b[0m \u001b[0;34m|\u001b[0m \u001b[0;32mNone\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1620\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1622\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mclose\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m->\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, f, engine)\u001b[0m\n\u001b[1;32m   1878\u001b[0m                 \u001b[0;32mif\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1879\u001b[0m                     \u001b[0mmode\u001b[0m \u001b[0;34m+=\u001b[0m \u001b[0;34m\"b\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1880\u001b[0;31m             self.handles = get_handle(\n\u001b[0m\u001b[1;32m   1881\u001b[0m                 \u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1882\u001b[0m                 \u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    871\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mencoding\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    872\u001b[0m             \u001b[0;31m# Encoding\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 873\u001b[0;31m             handle = open(\n\u001b[0m\u001b[1;32m    874\u001b[0m                 \u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    875\u001b[0m                 \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: 'train.csv'"
+          ]
+        }
+      ],
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "train = pd.read_csv(\"train.csv\")\n",
+        "test = pd.read_csv(\"test.csv\")"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import files\n",
+        "\n",
+        "uploaded = files.upload()\n"
+      ],
+      "metadata": {
+        "id": "100n7huOfzFF",
+        "outputId": "c4e70312-01fb-4465-cdd7-d1f5d7aa0775",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 395
+        }
+      },
+      "execution_count": 48,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ],
+            "text/html": [
+              "\n",
+              "     <input type=\"file\" id=\"files-5bdd36c5-5561-414e-8b6f-85e68e30ba33\" name=\"files[]\" multiple disabled\n",
+              "        style=\"border:none\" />\n",
+              "     <output id=\"result-5bdd36c5-5561-414e-8b6f-85e68e30ba33\">\n",
+              "      Upload widget is only available when the cell has been executed in the\n",
+              "      current browser session. Please rerun this cell to enable.\n",
+              "      </output>\n",
+              "      <script>// Copyright 2017 Google LLC\n",
+              "//\n",
+              "// Licensed under the Apache License, Version 2.0 (the \"License\");\n",
+              "// you may not use this file except in compliance with the License.\n",
+              "// You may obtain a copy of the License at\n",
+              "//\n",
+              "//      http://www.apache.org/licenses/LICENSE-2.0\n",
+              "//\n",
+              "// Unless required by applicable law or agreed to in writing, software\n",
+              "// distributed under the License is distributed on an \"AS IS\" BASIS,\n",
+              "// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n",
+              "// See the License for the specific language governing permissions and\n",
+              "// limitations under the License.\n",
+              "\n",
+              "/**\n",
+              " * @fileoverview Helpers for google.colab Python module.\n",
+              " */\n",
+              "(function(scope) {\n",
+              "function span(text, styleAttributes = {}) {\n",
+              "  const element = document.createElement('span');\n",
+              "  element.textContent = text;\n",
+              "  for (const key of Object.keys(styleAttributes)) {\n",
+              "    element.style[key] = styleAttributes[key];\n",
+              "  }\n",
+              "  return element;\n",
+              "}\n",
+              "\n",
+              "// Max number of bytes which will be uploaded at a time.\n",
+              "const MAX_PAYLOAD_SIZE = 100 * 1024;\n",
+              "\n",
+              "function _uploadFiles(inputId, outputId) {\n",
+              "  const steps = uploadFilesStep(inputId, outputId);\n",
+              "  const outputElement = document.getElementById(outputId);\n",
+              "  // Cache steps on the outputElement to make it available for the next call\n",
+              "  // to uploadFilesContinue from Python.\n",
+              "  outputElement.steps = steps;\n",
+              "\n",
+              "  return _uploadFilesContinue(outputId);\n",
+              "}\n",
+              "\n",
+              "// This is roughly an async generator (not supported in the browser yet),\n",
+              "// where there are multiple asynchronous steps and the Python side is going\n",
+              "// to poll for completion of each step.\n",
+              "// This uses a Promise to block the python side on completion of each step,\n",
+              "// then passes the result of the previous step as the input to the next step.\n",
+              "function _uploadFilesContinue(outputId) {\n",
+              "  const outputElement = document.getElementById(outputId);\n",
+              "  const steps = outputElement.steps;\n",
+              "\n",
+              "  const next = steps.next(outputElement.lastPromiseValue);\n",
+              "  return Promise.resolve(next.value.promise).then((value) => {\n",
+              "    // Cache the last promise value to make it available to the next\n",
+              "    // step of the generator.\n",
+              "    outputElement.lastPromiseValue = value;\n",
+              "    return next.value.response;\n",
+              "  });\n",
+              "}\n",
+              "\n",
+              "/**\n",
+              " * Generator function which is called between each async step of the upload\n",
+              " * process.\n",
+              " * @param {string} inputId Element ID of the input file picker element.\n",
+              " * @param {string} outputId Element ID of the output display.\n",
+              " * @return {!Iterable<!Object>} Iterable of next steps.\n",
+              " */\n",
+              "function* uploadFilesStep(inputId, outputId) {\n",
+              "  const inputElement = document.getElementById(inputId);\n",
+              "  inputElement.disabled = false;\n",
+              "\n",
+              "  const outputElement = document.getElementById(outputId);\n",
+              "  outputElement.innerHTML = '';\n",
+              "\n",
+              "  const pickedPromise = new Promise((resolve) => {\n",
+              "    inputElement.addEventListener('change', (e) => {\n",
+              "      resolve(e.target.files);\n",
+              "    });\n",
+              "  });\n",
+              "\n",
+              "  const cancel = document.createElement('button');\n",
+              "  inputElement.parentElement.appendChild(cancel);\n",
+              "  cancel.textContent = 'Cancel upload';\n",
+              "  const cancelPromise = new Promise((resolve) => {\n",
+              "    cancel.onclick = () => {\n",
+              "      resolve(null);\n",
+              "    };\n",
+              "  });\n",
+              "\n",
+              "  // Wait for the user to pick the files.\n",
+              "  const files = yield {\n",
+              "    promise: Promise.race([pickedPromise, cancelPromise]),\n",
+              "    response: {\n",
+              "      action: 'starting',\n",
+              "    }\n",
+              "  };\n",
+              "\n",
+              "  cancel.remove();\n",
+              "\n",
+              "  // Disable the input element since further picks are not allowed.\n",
+              "  inputElement.disabled = true;\n",
+              "\n",
+              "  if (!files) {\n",
+              "    return {\n",
+              "      response: {\n",
+              "        action: 'complete',\n",
+              "      }\n",
+              "    };\n",
+              "  }\n",
+              "\n",
+              "  for (const file of files) {\n",
+              "    const li = document.createElement('li');\n",
+              "    li.append(span(file.name, {fontWeight: 'bold'}));\n",
+              "    li.append(span(\n",
+              "        `(${file.type || 'n/a'}) - ${file.size} bytes, ` +\n",
+              "        `last modified: ${\n",
+              "            file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() :\n",
+              "                                    'n/a'} - `));\n",
+              "    const percent = span('0% done');\n",
+              "    li.appendChild(percent);\n",
+              "\n",
+              "    outputElement.appendChild(li);\n",
+              "\n",
+              "    const fileDataPromise = new Promise((resolve) => {\n",
+              "      const reader = new FileReader();\n",
+              "      reader.onload = (e) => {\n",
+              "        resolve(e.target.result);\n",
+              "      };\n",
+              "      reader.readAsArrayBuffer(file);\n",
+              "    });\n",
+              "    // Wait for the data to be ready.\n",
+              "    let fileData = yield {\n",
+              "      promise: fileDataPromise,\n",
+              "      response: {\n",
+              "        action: 'continue',\n",
+              "      }\n",
+              "    };\n",
+              "\n",
+              "    // Use a chunked sending to avoid message size limits. See b/62115660.\n",
+              "    let position = 0;\n",
+              "    do {\n",
+              "      const length = Math.min(fileData.byteLength - position, MAX_PAYLOAD_SIZE);\n",
+              "      const chunk = new Uint8Array(fileData, position, length);\n",
+              "      position += length;\n",
+              "\n",
+              "      const base64 = btoa(String.fromCharCode.apply(null, chunk));\n",
+              "      yield {\n",
+              "        response: {\n",
+              "          action: 'append',\n",
+              "          file: file.name,\n",
+              "          data: base64,\n",
+              "        },\n",
+              "      };\n",
+              "\n",
+              "      let percentDone = fileData.byteLength === 0 ?\n",
+              "          100 :\n",
+              "          Math.round((position / fileData.byteLength) * 100);\n",
+              "      percent.textContent = `${percentDone}% done`;\n",
+              "\n",
+              "    } while (position < fileData.byteLength);\n",
+              "  }\n",
+              "\n",
+              "  // All done.\n",
+              "  yield {\n",
+              "    response: {\n",
+              "      action: 'complete',\n",
+              "    }\n",
+              "  };\n",
+              "}\n",
+              "\n",
+              "scope.google = scope.google || {};\n",
+              "scope.google.colab = scope.google.colab || {};\n",
+              "scope.google.colab._files = {\n",
+              "  _uploadFiles,\n",
+              "  _uploadFilesContinue,\n",
+              "};\n",
+              "})(self);\n",
+              "</script> "
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "error",
+          "ename": "KeyboardInterrupt",
+          "evalue": "",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mKeyboardInterrupt\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/1847732800.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0mgoogle\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcolab\u001b[0m \u001b[0;32mimport\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 3\u001b[0;31m \u001b[0muploaded\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mfiles\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupload\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/google/colab/files.py\u001b[0m in \u001b[0;36mupload\u001b[0;34m(target_dir)\u001b[0m\n\u001b[1;32m     67\u001b[0m   \"\"\"\n\u001b[1;32m     68\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 69\u001b[0;31m   \u001b[0muploaded_files\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0m_upload_files\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mmultiple\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;32mTrue\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     70\u001b[0m   \u001b[0;31m# Mapping from original filename to filename as saved locally.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     71\u001b[0m   \u001b[0mlocal_filenames\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdict\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/google/colab/files.py\u001b[0m in \u001b[0;36m_upload_files\u001b[0;34m(multiple)\u001b[0m\n\u001b[1;32m    159\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    160\u001b[0m   \u001b[0;31m# First result is always an indication that the file picker has completed.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 161\u001b[0;31m   result = _output.eval_js(\n\u001b[0m\u001b[1;32m    162\u001b[0m       'google.colab._files._uploadFiles(\"{input_id}\", \"{output_id}\")'.format(\n\u001b[1;32m    163\u001b[0m           \u001b[0minput_id\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0minput_id\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0moutput_id\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0moutput_id\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/google/colab/output/_js.py\u001b[0m in \u001b[0;36meval_js\u001b[0;34m(script, ignore_result, timeout_sec)\u001b[0m\n\u001b[1;32m     38\u001b[0m   \u001b[0;32mif\u001b[0m \u001b[0mignore_result\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     39\u001b[0m     \u001b[0;32mreturn\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 40\u001b[0;31m   \u001b[0;32mreturn\u001b[0m \u001b[0m_message\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_reply_from_input\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mrequest_id\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mtimeout_sec\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     41\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     42\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/google/colab/_message.py\u001b[0m in \u001b[0;36mread_reply_from_input\u001b[0;34m(message_id, timeout_sec)\u001b[0m\n\u001b[1;32m     94\u001b[0m     \u001b[0mreply\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0m_read_next_input_message\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     95\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mreply\u001b[0m \u001b[0;34m==\u001b[0m \u001b[0m_NOT_READY\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0misinstance\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mreply\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mdict\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 96\u001b[0;31m       \u001b[0mtime\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msleep\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;36m0.025\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     97\u001b[0m       \u001b[0;32mcontinue\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     98\u001b[0m     if (\n",
+            "\u001b[0;31mKeyboardInterrupt\u001b[0m: "
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install pandas numpy scikit-learn gensim nltk"
+      ],
+      "metadata": {
+        "id": "oKQDqNgdfbYb",
+        "outputId": "697ec8b6-d254-4b08-e5e3-b55768795dbb",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": 45,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Requirement already satisfied: pandas in /usr/local/lib/python3.13/dist-packages (2.2.3)\n",
+            "Requirement already satisfied: numpy in /usr/local/lib/python3.13/dist-packages (2.1.3)\n",
+            "Requirement already satisfied: scikit-learn in /usr/local/lib/python3.13/dist-packages (1.6.1)\n",
+            "Requirement already satisfied: gensim in /usr/local/lib/python3.13/dist-packages (4.4.0)\n",
+            "Requirement already satisfied: nltk in /usr/local/lib/python3.13/dist-packages (3.9.1)\n",
+            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.13/dist-packages (from pandas) (2.9.0.post0)\n",
+            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.13/dist-packages (from pandas) (2025.2)\n",
+            "Requirement already satisfied: tzdata>=2022.7 in /usr/local/lib/python3.13/dist-packages (from pandas) (2026.3)\n",
+            "Requirement already satisfied: scipy>=1.6.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (1.16.3)\n",
+            "Requirement already satisfied: joblib>=1.2.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (1.6.0)\n",
+            "Requirement already satisfied: threadpoolctl>=3.1.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (3.6.0)\n",
+            "Requirement already satisfied: smart_open>=1.8.1 in /usr/local/lib/python3.13/dist-packages (from gensim) (8.0.1)\n",
+            "Requirement already satisfied: click in /usr/local/lib/python3.13/dist-packages (from nltk) (8.5.0)\n",
+            "Requirement already satisfied: regex>=2021.8.3 in /usr/local/lib/python3.13/dist-packages (from nltk) (2025.11.3)\n",
+            "Requirement already satisfied: tqdm in /usr/local/lib/python3.13/dist-packages (from nltk) (4.67.3)\n",
+            "Requirement already satisfied: cloudpickle>=3.0 in /usr/local/lib/python3.13/dist-packages (from joblib>=1.2.0->scikit-learn) (3.1.2)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.13/dist-packages (from python-dateutil>=2.8.2->pandas) (1.17.0)\n",
+            "Requirement already satisfied: wrapt in /usr/local/lib/python3.13/dist-packages (from smart_open>=1.8.1->gensim) (2.4.0)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "train = pd.read_csv(\"train.csv\")\n",
+        "test = pd.read_csv(\"test.csv\")\n"
+      ],
+      "metadata": {
+        "id": "gtSsJZZKfNwc",
+        "outputId": "36c48d55-8e59-4839-9198-bb42cf3a9c63",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 426
+        }
+      },
+      "execution_count": 42,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "FileNotFoundError",
+          "evalue": "[Errno 2] No such file or directory: 'train.csv'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/987599364.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;32mimport\u001b[0m \u001b[0mpandas\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 3\u001b[0;31m \u001b[0mtrain\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"train.csv\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      4\u001b[0m \u001b[0mtest\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"test.csv\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, date_format, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, encoding_errors, dialect, on_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options, dtype_backend)\u001b[0m\n\u001b[1;32m   1024\u001b[0m     \u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkwds_defaults\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1025\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1026\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1027\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1028\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    619\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 620\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    622\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mchunksize\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0miterator\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m   1618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1619\u001b[0m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mIOHandles\u001b[0m \u001b[0;34m|\u001b[0m \u001b[0;32mNone\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1620\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1622\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mclose\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m->\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, f, engine)\u001b[0m\n\u001b[1;32m   1878\u001b[0m                 \u001b[0;32mif\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1879\u001b[0m                     \u001b[0mmode\u001b[0m \u001b[0;34m+=\u001b[0m \u001b[0;34m\"b\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1880\u001b[0;31m             self.handles = get_handle(\n\u001b[0m\u001b[1;32m   1881\u001b[0m                 \u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1882\u001b[0m                 \u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    871\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mencoding\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    872\u001b[0m             \u001b[0;31m# Encoding\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 873\u001b[0;31m             handle = open(\n\u001b[0m\u001b[1;32m    874\u001b[0m                 \u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    875\u001b[0m                 \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: 'train.csv'"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "NameError: name 'train' is not defined"
+      ],
+      "metadata": {
+        "id": "QgrX4SijfLO-",
+        "outputId": "90b0b3bb-36ed-42e0-bcd7-6697ef0545e7",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 106
+        }
+      },
+      "execution_count": 41,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "SyntaxError",
+          "evalue": "invalid syntax (425218202.py, line 1)",
+          "traceback": [
+            "\u001b[0;36m  File \u001b[0;32m\"/tmp/ipykernel_1016/425218202.py\"\u001b[0;36m, line \u001b[0;32m1\u001b[0m\n\u001b[0;31m    NameError: name 'train' is not defined\u001b[0m\n\u001b[0m                    ^\u001b[0m\n\u001b[0;31mSyntaxError\u001b[0m\u001b[0;31m:\u001b[0m invalid syntax\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install numpy pandas scikit-learn gensim nltk\n"
+      ],
+      "metadata": {
+        "id": "MEm_Q4FYezPu",
+        "outputId": "aeab9442-3492-4d12-ddff-ffcecd5a1197",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "execution_count": 38,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Requirement already satisfied: numpy in /usr/local/lib/python3.13/dist-packages (2.1.3)\n",
+            "Requirement already satisfied: pandas in /usr/local/lib/python3.13/dist-packages (2.2.3)\n",
+            "Requirement already satisfied: scikit-learn in /usr/local/lib/python3.13/dist-packages (1.6.1)\n",
+            "Requirement already satisfied: gensim in /usr/local/lib/python3.13/dist-packages (4.4.0)\n",
+            "Requirement already satisfied: nltk in /usr/local/lib/python3.13/dist-packages (3.9.1)\n",
+            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.13/dist-packages (from pandas) (2.9.0.post0)\n",
+            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.13/dist-packages (from pandas) (2025.2)\n",
+            "Requirement already satisfied: tzdata>=2022.7 in /usr/local/lib/python3.13/dist-packages (from pandas) (2026.3)\n",
+            "Requirement already satisfied: scipy>=1.6.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (1.16.3)\n",
+            "Requirement already satisfied: joblib>=1.2.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (1.6.0)\n",
+            "Requirement already satisfied: threadpoolctl>=3.1.0 in /usr/local/lib/python3.13/dist-packages (from scikit-learn) (3.6.0)\n",
+            "Requirement already satisfied: smart_open>=1.8.1 in /usr/local/lib/python3.13/dist-packages (from gensim) (8.0.1)\n",
+            "Requirement already satisfied: click in /usr/local/lib/python3.13/dist-packages (from nltk) (8.5.0)\n",
+            "Requirement already satisfied: regex>=2021.8.3 in /usr/local/lib/python3.13/dist-packages (from nltk) (2025.11.3)\n",
+            "Requirement already satisfied: tqdm in /usr/local/lib/python3.13/dist-packages (from nltk) (4.67.3)\n",
+            "Requirement already satisfied: cloudpickle>=3.0 in /usr/local/lib/python3.13/dist-packages (from joblib>=1.2.0->scikit-learn) (3.1.2)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.13/dist-packages (from python-dateutil>=2.8.2->pandas) (1.17.0)\n",
+            "Requirement already satisfied: wrapt in /usr/local/lib/python3.13/dist-packages (from smart_open>=1.8.1->gensim) (2.4.0)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "ZR_aHJZyZbH4"
+      },
+      "outputs": [],
+      "source": [
+        "assert texts_train[5] ==  'who cares anymore . they attack with impunity .'\n",
+        "assert texts_test[89] == 'hey todds ! quick q ? why are you so gay'\n",
+        "assert len(texts_test) == len(y_test)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "xFd1Ki6dZbH4"
+      },
+      "source": [
+        "### Solving it: bag of words (1 point)\n",
+        "\n",
+        "![img](http://www.novuslight.com/uploads/n/BagofWords.jpg)\n",
+        "\n",
+        "One traditional approach to such problem is to use bag of words features:\n",
+        "1. build a vocabulary of frequent words (use train data only)\n",
+        "2. for each training sample, count the number of times a word occurs in it (for each word in vocabulary).\n",
+        "3. consider this count a feature for some classifier\n",
+        "\n",
+        "`bow_vocabulary` must be a `list[str]` of distinct tokens ordered by decreasing corpus frequency. `bow_vocabulary[j]` is the token represented by feature column `j`; ties may use any deterministic order. A set is not sufficient because it does not define feature-column indices. For efficient lookup, you may additionally build a dictionary such as `token_to_id = {token: j for j, token in enumerate(bow_vocabulary)}`.\n",
+        "\n",
+        "__Note:__ in practice, you can compute such features using sklearn. Please don't do that in the current assignment, though.\n",
+        "* `from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer`"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 50,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 245
+        },
+        "id": "1XwL9_2jZbH5",
+        "outputId": "3919db86-b4d2-4ee5-a9c0-6cf9aa8f31b3"
+      },
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "NameError",
+          "evalue": "name 'texts_train' is not defined",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/160425591.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      8\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      9\u001b[0m \u001b[0mcounter\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mCounter\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 10\u001b[0;31m \u001b[0;32mfor\u001b[0m \u001b[0mtext\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mtexts_train\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     11\u001b[0m     \u001b[0mcounter\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtext\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msplit\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     12\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mNameError\u001b[0m: name 'texts_train' is not defined"
+          ]
+        }
+      ],
+      "source": [
+        "# task: find up to k most frequent tokens in texts_train,\n",
+        "# sort them by number of occurrences (highest first).\n",
+        "# bow_vocabulary must be a list: its position defines the feature column.\n",
+        "# Use text.split() here and in text_to_bow; do not run a tokenizer again.\n",
+        "k = 10000\n",
+        "\n",
+        "from collections import Counter\n",
+        "\n",
+        "counter = Counter()\n",
+        "for text in texts_train:\n",
+        "    counter.update(text.split())\n",
+        "\n",
+        "bow_vocabulary = [token for token, _ in sorted(counter.items(), key=lambda x: (-x[1], x[0]))[:k]]\n",
+        "\n",
+        "print('example features:', sorted(bow_vocabulary)[::100])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 49,
+      "metadata": {
+        "id": "yZMigd3BZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "def text_to_bow(text):\n",
+        "    \"\"\" convert text string to an array of token counts. Use bow_vocabulary. \"\"\"\n",
+        "    bow_index = {token: i for i, token in enumerate(bow_vocabulary)}\n",
+        "    result = np.zeros(len(bow_vocabulary), dtype='float32')\n",
+        "\n",
+        "    for token in text.split():\n",
+        "        idx = bow_index.get(token)\n",
+        "        if idx is not None:\n",
+        "            result[idx] += 1\n",
+        "\n",
+        "    return result"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "0_o7vW4uZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "X_train_bow = np.stack(list(map(text_to_bow, texts_train)))\n",
+        "X_test_bow = np.stack(list(map(text_to_bow, texts_test)))"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "tzs0MB32ZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "k_max = len(set(' '.join(texts_train).split()))\n",
+        "bow_vocabulary_set = set(bow_vocabulary)\n",
+        "expected_counts = np.array([\n",
+        "    sum(token in bow_vocabulary_set for token in text.split())\n",
+        "    for text in texts_train[5:10]\n",
+        "])\n",
+        "\n",
+        "assert X_train_bow.shape == (len(texts_train), min(k, k_max))\n",
+        "assert X_test_bow.shape == (len(texts_test), min(k, k_max))\n",
+        "assert np.all(X_train_bow[5:10].sum(-1) == expected_counts)\n",
+        "assert isinstance(bow_vocabulary, list), \"bow_vocabulary must be a list whose positions define feature columns\"\n",
+        "assert len(bow_vocabulary) <= min(k, k_max)\n",
+        "assert len(bow_vocabulary) == len(bow_vocabulary_set), \"vocabulary tokens must be unique\"\n",
+        "assert X_train_bow[6, bow_vocabulary.index('.')] == texts_train[6].split().count('.')"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "92mPkfP3ZbH5"
+      },
+      "source": [
+        "We shall use a simple linear model: __Logistic Regression__.\n",
+        "It might not be the fanciest one around, but the simplicity has its own advantages: a linear model is blazingly fast and needs less data to fit.\n",
+        "Let's sklearn it!"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 60,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 263
+        },
+        "id": "-YSYvABiZbH5",
+        "outputId": "65b76694-b24f-4c84-c569-b4978bc1e595"
+      },
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "NameError",
+          "evalue": "name 'texts' is not defined",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/720821345.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      3\u001b[0m texts_train, texts_test, y_train, y_test = train_test_split(\n\u001b[0;32m----> 4\u001b[0;31m     \u001b[0mtexts\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      5\u001b[0m     \u001b[0mtarget\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      6\u001b[0m     \u001b[0mtest_size\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m0.5\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mNameError\u001b[0m: name 'texts' is not defined"
+          ]
+        }
+      ],
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "\n",
+        "texts_train, texts_test, y_train, y_test = train_test_split(\n",
+        "    texts,\n",
+        "    target,\n",
+        "    test_size=0.5,\n",
+        "    random_state=42\n",
+        ")"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "\n",
+        "data = pd.read_csv(\"comments.tsv\", sep=\"\\t\")\n",
+        "\n",
+        "texts = data[\"comment_text\"].values\n",
+        "target = data[\"should_ban\"].values"
+      ],
+      "metadata": {
+        "id": "b-a2RkIGhc1G",
+        "outputId": "d8c7706d-9958-496b-bc37-721f4d67149b",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 443
+        }
+      },
+      "execution_count": 58,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "FileNotFoundError",
+          "evalue": "[Errno 2] No such file or directory: 'comments.tsv'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipykernel_1016/1469147915.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;32mimport\u001b[0m \u001b[0mpandas\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      3\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 4\u001b[0;31m \u001b[0mdata\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"comments.tsv\"\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0msep\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m\"\\t\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      5\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      6\u001b[0m \u001b[0mtexts\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdata\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m\"comment_text\"\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mvalues\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, date_format, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, encoding_errors, dialect, on_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options, dtype_backend)\u001b[0m\n\u001b[1;32m   1024\u001b[0m     \u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkwds_defaults\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1025\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1026\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1027\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1028\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    619\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 620\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    622\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mchunksize\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0miterator\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m   1618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1619\u001b[0m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mIOHandles\u001b[0m \u001b[0;34m|\u001b[0m \u001b[0;32mNone\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1620\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1622\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mclose\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m->\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, f, engine)\u001b[0m\n\u001b[1;32m   1878\u001b[0m                 \u001b[0;32mif\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1879\u001b[0m                     \u001b[0mmode\u001b[0m \u001b[0;34m+=\u001b[0m \u001b[0;34m\"b\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1880\u001b[0;31m             self.handles = get_handle(\n\u001b[0m\u001b[1;32m   1881\u001b[0m                 \u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1882\u001b[0m                 \u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.13/dist-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    871\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mencoding\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    872\u001b[0m             \u001b[0;31m# Encoding\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 873\u001b[0;31m             handle = open(\n\u001b[0m\u001b[1;32m    874\u001b[0m                 \u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    875\u001b[0m                 \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: 'comments.tsv'"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "WdU9rpgLZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "from sklearn.metrics import roc_auc_score, roc_curve\n",
+        "\n",
+        "for name, X, y, model in [\n",
+        "    ('train', X_train_bow, y_train, bow_model),\n",
+        "    ('test ', X_test_bow, y_test, bow_model)\n",
+        "]:\n",
+        "    proba = model.predict_proba(X)[:, 1]\n",
+        "    auc = roc_auc_score(y, proba)\n",
+        "    plt.plot(*roc_curve(y, proba)[:2], label='%s AUC=%.4f' % (name, auc))\n",
+        "\n",
+        "plt.plot([0, 1], [0, 1], '--', color='black',)\n",
+        "plt.legend(fontsize='large')\n",
+        "plt.grid()\n",
+        "\n",
+        "test_accuracy = np.mean(bow_model.predict(X_test_bow) == y_test)\n",
+        "print(f\"Model accuracy: {test_accuracy:.3f}\")\n",
+        "assert test_accuracy > 0.77, \"Hint: tune the parameter C to improve performance\"\n",
+        "print(\"Well done!\")"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "8bolJvzkZbH5"
+      },
+      "source": [
+        "### Task: implement TF-IDF features (1 point)\n",
+        "\n",
+        "Not all words are equally useful. One can prioritize rare words and downscale words like \"and\"/\"or\" by using __tf-idf features__. This abbreviation stands for __text frequency/inverse document frequency__ and means exactly that:\n",
+        "\n",
+        "$$ \\text{feature}_i = \\frac{\\text{Count}(word_i \\in x)}{\\text{Total number of words in } x} \\times \\log\\left(\\frac{N}{\\text{Count}(word_i \\in D) + \\alpha}\\right) $$\n",
+        "\n",
+        "\n",
+        ", where x is a single text, D is your dataset (a collection of texts), N is a total number of documents and $\\alpha$ is a smoothing hyperparameter (typically 1).\n",
+        "And $Count(word_i \\in D)$ is the number of documents where $word_i$ appears.\n",
+        "\n",
+        "It may also be a good idea to normalize each data sample after computing tf-idf features.\n",
+        "\n",
+        "__Your task:__ implement tf-idf features, train a model and evaluate ROC curve. Compare it with basic BagOfWords model from above.\n",
+        "\n",
+        "TF-IDF is not guaranteed to outperform raw-count BoW on this dataset. A lower TF-IDF ROC-AUC or accuracy is acceptable if the implementation is correct; the relative ordering of the two models is not graded.\n",
+        "\n",
+        "Please don't use sklearn/nltk built-in tf-idf vectorizers in your solution :) You can still use 'em for debugging though."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "Gt0-hBBmZbH5"
+      },
+      "outputs": [],
+      "source": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "usFYhPA0ZbH5"
+      },
+      "source": [
+        "Scroll down when you're done with TF-IDF!\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "```\n",
+        "\n",
+        "\n",
+        "### Solving it better: word vectors (1 point)\n",
+        "\n",
+        "Let's try another approach: instead of counting per-word frequencies, we shall map all words to pre-trained word vectors and average over them to get text features.\n",
+        "\n",
+        "This should give us two key advantages: (1) we now have 10^2 features instead of 10^4 and (2) our model can generalize to word that are not in training dataset.\n",
+        "\n",
+        "We begin with a standard approach with pre-trained word vectors. However, you may also try\n",
+        "* training embeddings from scratch on relevant (unlabeled) data\n",
+        "* multiplying word vectors by inverse word frequency in dataset (like tf-idf).\n",
+        "* concatenating several embeddings\n",
+        "    * call `gensim.downloader.info()['models'].keys()` to get a list of available models\n",
+        "* clusterizing words by their word-vectors and try bag of cluster_ids\n",
+        "\n",
+        "__Note:__ loading pre-trained model may take a while. It's a perfect opportunity to refill your cup of tea/coffee and grab some extra cookies. Or binge-watch some tv series if you're slow on internet connection"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "_bF_tZf5ZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "import gensim.downloader\n",
+        "embeddings = gensim.downloader.load(\"fasttext-wiki-news-subwords-300\")\n",
+        "\n",
+        "# If you're low on RAM or download speed, use \"glove-wiki-gigaword-100\" instead. Ignore all further asserts."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 53,
+      "metadata": {
+        "id": "bEfX7miIZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "def vectorize_sum(comment):\n",
+        "    \"\"\"\n",
+        "    implement a function that converts preprocessed comment to a sum of token vectors\n",
+        "    \"\"\"\n",
+        "    embedding_dim = embeddings.vectors.shape[1]\n",
+        "    features = np.zeros([embedding_dim], dtype='float32')\n",
+        "\n",
+        "    for token in comment.split():\n",
+        "        if token in embeddings.key_to_index:\n",
+        "            features += embeddings[token]\n",
+        "\n",
+        "    return features"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "ugGaZ3DcZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "X_train_wv = np.stack([vectorize_sum(text) for text in texts_train])\n",
+        "X_test_wv = np.stack([vectorize_sum(text) for text in texts_test])"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "K0DItDHoZbH5"
+      },
+      "outputs": [],
+      "source": [
+        "wv_model = LogisticRegression().fit(X_train_wv, y_train)\n",
+        "\n",
+        "for name, X, y, model in [\n",
+        "    ('bow train', X_train_bow, y_train, bow_model),\n",
+        "    ('bow test ', X_test_bow, y_test, bow_model),\n",
+        "    ('vec train', X_train_wv, y_train, wv_model),\n",
+        "    ('vec test ', X_test_wv, y_test, wv_model)\n",
+        "]:\n",
+        "    proba = model.predict_proba(X)[:, 1]\n",
+        "    auc = roc_auc_score(y, proba)\n",
+        "    plt.plot(*roc_curve(y, proba)[:2], label='%s AUC=%.4f' % (name, auc))\n",
+        "\n",
+        "plt.plot([0, 1], [0, 1], '--', color='black',)\n",
+        "plt.legend(fontsize='large')\n",
+        "plt.grid()\n",
+        "\n",
+        "assert roc_auc_score(y_test, wv_model.predict_proba(X_test_wv)[:, 1]) > 0.92, \"something's wrong with your features\""
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "s8I8I67PZbH5"
+      },
+      "source": [
+        "If everything went right, you've just managed to reduce misclassification rate by a factor of two.\n",
+        "This trick is very useful when you're dealing with small datasets. However, if you have hundreds of thousands of samples, there's a whole different range of methods for that. We'll get there in the second part.\n",
+        "\n",
+        "**Would you like to know more?**\n",
+        "* See what other embeddings are there in the model zoo: `gensim.downloader.info()`\n",
+        "* Take a look at [FastText embeddings](https://github.com/facebookresearch/fastText)"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3 (ipykernel)",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.11.5"
+    },
+    "colab": {
+      "provenance": []
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
