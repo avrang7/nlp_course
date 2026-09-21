@@ -3,7 +3,17 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "LPt0wkqqVFMs"
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/avrang7/nlp_course/blob/2026/week01_seminar.\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "lv0lWVrTZbHz"
       },
       "source": [
         "## Practice: Fun with Word Embeddings (4 points total)\n",
@@ -21,7 +31,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "V2WMAMWsVFMt"
+        "id": "2MTyAyRUZbH0"
       },
       "outputs": [],
       "source": [
@@ -34,7 +44,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "404qCKuMVFMu"
+        "id": "PZ4M9GNBZbH0"
       },
       "outputs": [],
       "source": [
@@ -49,7 +59,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "67kRFxjnVFMu"
+        "id": "yzXtVeVWZbH0"
       },
       "source": [
         "__Tokenization:__ a typical first step for an NLP task is to split raw data into words.\n",
@@ -62,7 +72,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "ugUOO9KXVFMu"
+        "id": "AHFycUL7ZbH1"
       },
       "outputs": [],
       "source": [
@@ -74,28 +84,11 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 1,
+      "execution_count": 14,
       "metadata": {
-        "id": "kADSmL8uVFMu",
-        "outputId": "90fe7e3c-227d-41f7-ec06-c443ae150019",
-        "colab": {
-          "base_uri": "https://localhost:8080/",
-          "height": 180
-        }
+        "id": "_PU6YZtpZbH1"
       },
-      "outputs": [
-        {
-          "output_type": "error",
-          "ename": "NameError",
-          "evalue": "name 'data' is not defined",
-          "traceback": [
-            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
-            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
-            "\u001b[0;32m/tmp/ipykernel_1016/2036076591.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0;31m# data_tok should be a list of lists of tokens for each line in data.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      3\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 4\u001b[0;31m \u001b[0mdata_tok\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mtokenizer\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mtokenize\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mline\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mlower\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mline\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mdata\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
-            "\u001b[0;31mNameError\u001b[0m: name 'data' is not defined"
-          ]
-        }
-      ],
+      "outputs": [],
       "source": [
         "# TASK: lowercase everything and extract tokens with tokenizer.\n",
         "# data_tok should be a list of lists of tokens for each line in data.\n",
@@ -107,7 +100,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "vKa9dIIYVFMu"
+        "id": "qFYXZDh9ZbH1"
       },
       "outputs": [],
       "source": [
@@ -121,7 +114,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "GsYoI8tZVFMu"
+        "id": "a2wYIvbWZbH1"
       },
       "outputs": [],
       "source": [
@@ -131,7 +124,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "A1l0Wt9NVFMv"
+        "id": "2wPA84X-ZbH1"
       },
       "source": [
         "__Word vectors:__ as the saying goes, there's more than one way to train word embeddings. There's Word2Vec and GloVe with different objective functions. Then there's fastText that uses character-level models to train word embeddings.\n",
@@ -143,7 +136,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "tr6_N2bXVFMv"
+        "id": "ds4SDDovZbH1"
       },
       "outputs": [],
       "source": [
@@ -162,7 +155,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "HKRIe4BJVFMv"
+        "id": "mGLWtiWLZbH2"
       },
       "outputs": [],
       "source": [
@@ -174,7 +167,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "u-lbZ_lnVFMv"
+        "id": "aeP-BRZJZbH2"
       },
       "outputs": [],
       "source": [
@@ -185,7 +178,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "qI_QgVb4VFMv"
+        "id": "LSILflOBZbH2"
       },
       "source": [
         "### Using pre-trained model\n",
@@ -201,7 +194,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "lhzPL9k4VFMv"
+        "id": "SGbhrh4CZbH2"
       },
       "outputs": [],
       "source": [
@@ -213,7 +206,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "oNP3hx3zVFMv"
+        "id": "XVlYREdBZbH2"
       },
       "outputs": [],
       "source": [
@@ -223,7 +216,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "-FwJFoLGVFMv"
+        "id": "pf00LWZ0ZbH2"
       },
       "source": [
         "```\n",
@@ -249,7 +242,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "Vs-_prodVFMv"
+        "id": "LF7AyhiBZbH2"
       },
       "source": [
         "One way to see if our vectors are any good is to plot them. Thing is, those vectors are in 30D+ space and we humans are more used to 2-3D.\n",
@@ -263,7 +256,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "AAK4BQolVFMv"
+        "id": "TZSs5TSkZbH2"
       },
       "outputs": [],
       "source": [
@@ -276,7 +269,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "2Ks9vziDVFMw"
+        "id": "XyUF-kkWZbH2"
       },
       "outputs": [],
       "source": [
@@ -288,7 +281,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "GcsNDzc-VFMw"
+        "id": "33LrppyyZbH2"
       },
       "outputs": [],
       "source": [
@@ -300,7 +293,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "dm3Ogh8IVFMw"
+        "id": "B8qTtDDwZbH2"
       },
       "source": [
         "#### Linear projection: PCA\n",
@@ -326,7 +319,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "VYq89Bh_VFMw"
+        "id": "zmOKRQrBZbH2"
       },
       "outputs": [],
       "source": [
@@ -343,7 +336,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "4oPBP6lkVFMw"
+        "id": "P5hE66gtZbH3"
       },
       "outputs": [],
       "source": [
@@ -355,7 +348,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "2kzcxE4tVFMw"
+        "id": "5HsUynDbZbH3"
       },
       "source": [
         "#### Let's draw it!\n",
@@ -367,7 +360,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "_LL1VFwZVFMw"
+        "id": "9fD82jhWZbH3"
       },
       "outputs": [],
       "source": [
@@ -397,7 +390,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "JrGoI5crVFMw"
+        "id": "JJMWmvM5ZbH3"
       },
       "outputs": [],
       "source": [
@@ -409,7 +402,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "lyb9krmAVFMw"
+        "id": "CYCIMHonZbH3"
       },
       "source": [
         "#### Visualizing neighbors with t-SNE\n",
@@ -422,7 +415,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "iDQsaFACVFMw"
+        "id": "aZSwQ2e_ZbH3"
       },
       "outputs": [],
       "source": [
@@ -439,7 +432,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "AyYeH57IVFMw"
+        "id": "kD9XW5v9ZbH3"
       },
       "outputs": [],
       "source": [
@@ -453,7 +446,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "iTqklDOVVFMw"
+        "id": "fhqLBgvxZbH3"
       },
       "source": [
         "### Visualizing phrases\n",
@@ -469,7 +462,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "o-V_Lz3LVFMw"
+        "id": "gzzg_6q3ZbH3"
       },
       "outputs": [],
       "source": [
@@ -496,7 +489,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "RKdNNLHdVFMw"
+        "id": "yizsChLgZbH3"
       },
       "outputs": [],
       "source": [
@@ -513,7 +506,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "EMZ5htyIVFMw"
+        "id": "pWn_kANnZbH3"
       },
       "outputs": [],
       "source": [
@@ -528,7 +521,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "s0dhPB8wVFMw"
+        "id": "mtbFhX30ZbH3"
       },
       "outputs": [],
       "source": [
@@ -540,7 +533,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "wC_UmhWvVFMw"
+        "id": "Rcrzlwb7ZbH3"
       },
       "outputs": [],
       "source": [
@@ -556,7 +549,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "i7e9eTCHVFMw"
+        "id": "16kOEFqtZbH3"
       },
       "outputs": [],
       "source": [
@@ -568,7 +561,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "9YhbPo6nVFMw"
+        "id": "1RdT7f5cZbH3"
       },
       "source": [
         "**There's more below! Scroll down when you're ready.**\n",
@@ -633,7 +626,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "oHC2f0wkVFMw"
+        "id": "Ck_D0_0vZbH3"
       },
       "outputs": [],
       "source": [
@@ -645,7 +638,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "YrRo2k0eVFMw"
+        "id": "xE8GdPV7ZbH3"
       },
       "outputs": [],
       "source": [
@@ -664,7 +657,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "K2tyHxcnVFMx"
+        "id": "W10h5Hr5ZbH4"
       },
       "outputs": [],
       "source": [
@@ -675,7 +668,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "WGdUKQS9VFMx"
+        "id": "ox-s-yXdZbH4"
       },
       "source": [
         "__Note:__ it is generally a good idea to split data into train/test before anything is done to them.\n",
@@ -686,7 +679,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "CBcJI72oVFMx"
+        "id": "XI4sYSV3ZbH4"
       },
       "source": [
         "### Preprocessing and tokenization\n",
@@ -702,7 +695,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "KVKNoo9aVFMx"
+        "id": "qaSe7sG8ZbH4"
       },
       "outputs": [],
       "source": [
@@ -719,7 +712,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "bqzqD5peVFMx"
+        "id": "lZdlOGtpZbH4"
       },
       "outputs": [],
       "source": [
@@ -733,7 +726,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "3zehKvTGVFMx"
+        "id": "ZR_aHJZyZbH4"
       },
       "outputs": [],
       "source": [
@@ -745,7 +738,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "7vvi-hsOVFMx"
+        "id": "xFd1Ki6dZbH4"
       },
       "source": [
         "### Solving it: bag of words (1 point)\n",
@@ -767,7 +760,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "uph1YSoGVFMx"
+        "id": "1XwL9_2jZbH5"
       },
       "outputs": [],
       "source": [
@@ -788,7 +781,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "_P9pI2zYVFMx"
+        "id": "yZMigd3BZbH5"
       },
       "outputs": [],
       "source": [
@@ -803,7 +796,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "FKwVuILGVFMx"
+        "id": "0_o7vW4uZbH5"
       },
       "outputs": [],
       "source": [
@@ -815,7 +808,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "-_IP9SufVFMx"
+        "id": "tzs0MB32ZbH5"
       },
       "outputs": [],
       "source": [
@@ -838,7 +831,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "d273Ry4YVFMx"
+        "id": "92mPkfP3ZbH5"
       },
       "source": [
         "We shall use a simple linear model: __Logistic Regression__.\n",
@@ -850,7 +843,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "mdRm2y9-VFMx"
+        "id": "-YSYvABiZbH5"
       },
       "outputs": [],
       "source": [
@@ -862,7 +855,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "Scu0IvPdVFMx"
+        "id": "WdU9rpgLZbH5"
       },
       "outputs": [],
       "source": [
@@ -889,7 +882,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "T_zYvSNhVFMx"
+        "id": "8bolJvzkZbH5"
       },
       "source": [
         "### Task: implement TF-IDF features (1 point)\n",
@@ -915,7 +908,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "CrYFhesOVFMx"
+        "id": "Gt0-hBBmZbH5"
       },
       "outputs": [],
       "source": []
@@ -923,7 +916,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "lwZ-wPwvVFMx"
+        "id": "usFYhPA0ZbH5"
       },
       "source": [
         "Scroll down when you're done with TF-IDF!\n",
@@ -980,7 +973,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "c8oh0ydoVFMx"
+        "id": "_bF_tZf5ZbH5"
       },
       "outputs": [],
       "source": [
@@ -994,7 +987,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "GvicSXncVFMx"
+        "id": "bEfX7miIZbH5"
       },
       "outputs": [],
       "source": [
@@ -1019,7 +1012,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "jv8ljP8LVFMx"
+        "id": "ugGaZ3DcZbH5"
       },
       "outputs": [],
       "source": [
@@ -1031,7 +1024,7 @@
       "cell_type": "code",
       "execution_count": null,
       "metadata": {
-        "id": "nzx4oRMnVFMx"
+        "id": "K0DItDHoZbH5"
       },
       "outputs": [],
       "source": [
@@ -1057,7 +1050,7 @@
     {
       "cell_type": "markdown",
       "metadata": {
-        "id": "YeJeQLtqVFMx"
+        "id": "s8I8I67PZbH5"
       },
       "source": [
         "If everything went right, you've just managed to reduce misclassification rate by a factor of two.\n",
@@ -1088,7 +1081,8 @@
       "version": "3.11.5"
     },
     "colab": {
-      "provenance": []
+      "provenance": [],
+      "include_colab_link": true
     }
   },
   "nbformat": 4,
